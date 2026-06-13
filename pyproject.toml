@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "p5r-assistant"
+version = "0.1.0"
+description = "Windows desktop assistant for Persona 5 Royal Chinese dialogue choices."
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "lxml>=5.0",
+  "rapidfuzz>=3.0",
+]
+
+[project.optional-dependencies]
+ui = ["PySide6>=6.6"]
+capture = ["mss>=9.0", "pywin32>=306", "Pillow>=10.0", "opencv-python>=4.8"]
+ocr = ["rapidocr-onnxruntime>=1.2,<1.3"]
+input = ["keyboard>=0.13", "pygame>=2.5"]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["p5r_assistant*"]
