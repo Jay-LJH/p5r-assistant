@@ -29,6 +29,8 @@ _EXCLUDED_TITLE_PARTS = (
     "p5r assistant",
 )
 
+_DPI_AWARENESS_SET = False
+
 
 def is_p5r_window_title(title: str) -> bool:
     normalized = (title or "").strip()
@@ -40,7 +42,25 @@ def is_p5r_window_title(title: str) -> bool:
     return lowered == "p5r"
 
 
+def ensure_process_dpi_aware() -> None:
+    global _DPI_AWARENESS_SET
+    if _DPI_AWARENESS_SET:
+        return
+
+    try:
+        import ctypes
+
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except Exception:
+            ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+    _DPI_AWARENESS_SET = True
+
+
 def find_p5r_window() -> WindowInfo:
+    ensure_process_dpi_aware()
     try:
         import win32gui
     except ImportError as exc:  # pragma: no cover

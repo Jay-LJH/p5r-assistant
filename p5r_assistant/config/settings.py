@@ -8,10 +8,10 @@ from tempfile import NamedTemporaryFile
 
 @dataclass(slots=True)
 class CropRegion:
-    left: float = 0.08
-    top: float = 0.58
-    width: float = 0.84
-    height: float = 0.32
+    left: float = 0.46
+    top: float = 0.48
+    width: float = 0.38
+    height: float = 0.35
 
 
 @dataclass(slots=True)

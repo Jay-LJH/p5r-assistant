@@ -11,6 +11,10 @@ def test_settings_defaults_are_created(tmp_path: Path):
 
     assert settings.keyboard_hotkey == "ctrl+alt+p"
     assert settings.controller_combo == ["LB", "RB", "Y"]
+    assert settings.crop_region.left == 0.46
+    assert settings.crop_region.top == 0.48
+    assert settings.crop_region.width == 0.38
+    assert settings.crop_region.height == 0.35
     assert path.exists()
 
 
