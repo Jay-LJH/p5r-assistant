@@ -1,0 +1,9 @@
+.superpowers/
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+data/guide.json
+data/aliases.json
+data/settings.json
+logs/
