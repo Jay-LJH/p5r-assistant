@@ -16,6 +16,31 @@ class DesktopAppConfig:
     enable_gamepad: bool = True
 
 
+class QtRecognitionDispatcher:
+    def __init__(self, callback):
+        try:
+            from PySide6.QtCore import QObject, Signal, Slot
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError("PySide6 is not installed") from exc
+
+        class _Dispatcher(QObject):
+            triggered = Signal()
+
+            def __init__(self, callback):
+                super().__init__()
+                self._callback = callback
+                self.triggered.connect(self._run)
+
+            @Slot()
+            def _run(self):
+                self._callback()
+
+        self._dispatcher = _Dispatcher(callback)
+
+    def trigger(self) -> None:
+        self._dispatcher.triggered.emit()
+
+
 def run_app(paths: RuntimePaths | None = None, config: DesktopAppConfig | None = None) -> int:
     paths = paths or RuntimePaths()
     config = config or DesktopAppConfig()
@@ -26,7 +51,7 @@ def run_app(paths: RuntimePaths | None = None, config: DesktopAppConfig | None =
         overlay = ConsoleOverlay()
         service = LazyRecognitionService(paths, overlay=overlay)
         controller = DesktopController(service, overlay)
-        _start_listeners(paths, config, controller, overlay)
+        _start_listeners(paths, config, controller.trigger_recognition, overlay)
         print("P5R Assistant console mode. Press configured hotkey if available; install p5r-assistant[ui] for tray UI.")
         return 0
 
@@ -35,7 +60,8 @@ def run_app(paths: RuntimePaths | None = None, config: DesktopAppConfig | None =
     overlay = QtOverlay(settings.overlay_timeout_seconds)
     service = LazyRecognitionService(paths, overlay=overlay)
     controller = DesktopController(service, overlay)
-    listeners = _start_listeners(paths, config, controller, overlay)
+    dispatcher = QtRecognitionDispatcher(controller.trigger_recognition)
+    listeners = _start_listeners(paths, config, dispatcher.trigger, overlay)
     tray = QSystemTrayIcon(QIcon())
     tray.setToolTip("P5R Assistant")
     menu = QMenu()
@@ -58,17 +84,18 @@ def run_app(paths: RuntimePaths | None = None, config: DesktopAppConfig | None =
             listener.stop()
 
 
-def _start_listeners(paths: RuntimePaths, config: DesktopAppConfig, controller: DesktopController, overlay) -> list:
+def _start_listeners(paths: RuntimePaths, config: DesktopAppConfig, trigger_recognition, overlay) -> list:
     settings = load_settings(paths.settings_path)
     listeners = []
     if config.enable_keyboard:
-        listeners.append(KeyboardHotkey(settings.keyboard_hotkey, controller.trigger_recognition))
+        listeners.append(KeyboardHotkey(settings.keyboard_hotkey, trigger_recognition))
     if config.enable_gamepad:
-        listeners.append(GamepadComboListener(settings.controller_combo, controller.trigger_recognition))
+        listeners.append(GamepadComboListener(settings.controller_combo, trigger_recognition))
 
     for listener in listeners:
         try:
             listener.start()
         except Exception as exc:
+            print(f"P5R Assistant listener error: {exc}")
             overlay.show_error(str(exc))
     return listeners
