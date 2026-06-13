@@ -17,7 +17,30 @@ class WindowInfo:
     height: int
 
 
-def find_p5r_window(title_keywords: tuple[str, ...] = ("Persona 5 Royal", "P5R")) -> WindowInfo:
+_EXACT_TITLES = {
+    "Persona 5 Royal",
+    "女神异闻录5皇家版",
+    "\u6fc2\u5d07\ue6a3\u5bee\u509e\u6908\u8930?\u9428\u56e7\ue18d\u9417?",
+}
+
+_EXCLUDED_TITLE_PARTS = (
+    "visual studio code",
+    "codex",
+    "p5r assistant",
+)
+
+
+def is_p5r_window_title(title: str) -> bool:
+    normalized = (title or "").strip()
+    if normalized in _EXACT_TITLES:
+        return True
+    lowered = normalized.lower()
+    if any(excluded in lowered for excluded in _EXCLUDED_TITLE_PARTS):
+        return False
+    return lowered == "p5r"
+
+
+def find_p5r_window() -> WindowInfo:
     try:
         import win32gui
     except ImportError as exc:  # pragma: no cover
@@ -27,7 +50,7 @@ def find_p5r_window(title_keywords: tuple[str, ...] = ("Persona 5 Royal", "P5R")
 
     def callback(hwnd, _):
         title = win32gui.GetWindowText(hwnd)
-        if title and any(keyword.lower() in title.lower() for keyword in title_keywords):
+        if title and is_p5r_window_title(title):
             left, top, right, bottom = win32gui.GetWindowRect(hwnd)
             matches.append(WindowInfo(hwnd, title, left, top, right - left, bottom - top))
 

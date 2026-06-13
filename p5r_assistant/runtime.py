@@ -18,6 +18,7 @@ from p5r_assistant.ui.overlay import ConsoleOverlay
 class RuntimePaths:
     data_dir: Path = Path("data")
     htmls_dir: Path = Path("htmls")
+    debug_capture_dir: Path | None = None
 
     @property
     def guide_path(self) -> Path:
@@ -50,7 +51,7 @@ def build_recognition_service(paths: RuntimePaths, capture=None, ocr=None, overl
     settings = load_settings(paths.settings_path)
     guide = ensure_guide(paths)
     aliases = AliasStore.load(paths.aliases_path)
-    capture = capture or P5RChoiceRegionCapture(settings.crop_region)
+    capture = capture or P5RChoiceRegionCapture(settings.crop_region, debug_capture_dir=paths.debug_capture_dir)
     ocr = ocr or RapidOcrEngine()
     overlay = overlay or ConsoleOverlay()
     return RecognitionService(capture, ocr, guide, aliases, overlay)

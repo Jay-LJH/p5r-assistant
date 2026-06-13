@@ -30,3 +30,18 @@ def test_runtime_paths_resolve_expected_files():
     assert paths.guide_path == Path("runtime-data") / "guide.json"
     assert paths.settings_path == Path("runtime-data") / "settings.json"
     assert paths.aliases_path == Path("runtime-data") / "aliases.json"
+
+
+def test_run_command_accepts_debug_capture_dir():
+    args = build_parser().parse_args(
+        [
+            "run",
+            "--debug-capture-dir",
+            "debug-output",
+            "--no-keyboard",
+            "--no-gamepad",
+        ]
+    )
+
+    assert args.command == "run"
+    assert args.debug_capture_dir == "debug-output"

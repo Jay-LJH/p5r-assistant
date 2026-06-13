@@ -20,6 +20,9 @@ def build_parser() -> argparse.ArgumentParser:
     match_text.add_argument("choices", nargs="+")
     match_text.add_argument("--guide", default="data/guide.json")
 
+    clean_guide = subparsers.add_parser("clean-guide")
+    clean_guide.add_argument("--guide", default="data/guide.json")
+
     run = subparsers.add_parser("run")
     run.add_argument("--data-dir", default="data")
     run.add_argument("--htmls", default="htmls")
@@ -27,6 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--no-gamepad", action="store_true")
     run.add_argument("--recognize-once", action="store_true")
     run.add_argument("--startup-check", action="store_true")
+    run.add_argument("--debug-capture-dir", default=None)
     return parser
 
 
@@ -53,11 +57,38 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result.to_dict(), ensure_ascii=False))
         return 0
 
+    if args.command == "clean-guide":
+        from p5r_assistant.guide.importer import clean_guide
+        from p5r_assistant.guide.repository import load_guide, save_guide
+
+        path = Path(args.guide)
+        guide = load_guide(path)
+        before_confidants = len(guide.confidants)
+        before_events = sum(len(confidant.events) for confidant in guide.confidants)
+        cleaned = clean_guide(guide)
+        after_events = sum(len(confidant.events) for confidant in cleaned.confidants)
+        save_guide(cleaned, path)
+        print(
+            json.dumps(
+                {
+                    "guide": str(path),
+                    "confidants_removed": before_confidants - len(cleaned.confidants),
+                    "events_removed": before_events - after_events,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
     if args.command == "run":
         from p5r_assistant.runtime import RuntimePaths, build_recognition_service
         from p5r_assistant.ui.tray import DesktopAppConfig, run_app
 
-        paths = RuntimePaths(data_dir=Path(args.data_dir), htmls_dir=Path(args.htmls))
+        paths = RuntimePaths(
+            data_dir=Path(args.data_dir),
+            htmls_dir=Path(args.htmls),
+            debug_capture_dir=Path(args.debug_capture_dir) if args.debug_capture_dir else None,
+        )
         if args.startup_check:
             from p5r_assistant.runtime import ensure_runtime_files
 
