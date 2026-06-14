@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import html
+import re
+
 from p5r_assistant.match.matcher import MatchResult
 
 HWND_TOPMOST = -1
@@ -11,6 +14,13 @@ OVERLAY_STYLESHEET = (
     "QLabel { background: rgba(8, 10, 14, 245); color: white; "
     "border: 1px solid rgba(255, 255, 255, 180); "
     "padding: 14px; border-radius: 6px; font-size: 16px; }"
+)
+ROMANCE_CONDITION_RE = re.compile(r"([（(][^）)]*(?:恋人条件|戀人條件)[^）)]*[）)])")
+RICH_TEXT_STYLE = (
+    "<style>"
+    ".romance-condition { color: #ff5c8a; font-family: 'KaiTi', 'Microsoft YaHei UI', sans-serif; "
+    "font-size: 18px; font-style: italic; font-weight: 800; }"
+    "</style>"
 )
 
 
@@ -62,6 +72,38 @@ def format_recommendation(result: MatchResult) -> str:
     )
 
 
+def format_recommendation_rich_text(result: MatchResult) -> str:
+    recommendation = result.recommendation
+    if recommendation is None:
+        return _plain_text_to_rich_text(format_candidates(result))
+    choice = recommendation.choice
+    return (
+        f"<html><head>{RICH_TEXT_STYLE}</head><body>"
+        f"{html.escape('P5R Assistant')}<br><br>"
+        f"{html.escape('鎺ㄨ崘锛氱 ')}{choice.index}{html.escape(' 椤?')}"
+        f"{_emphasize_romance_condition(choice.text)}<br><br>"
+        f"{html.escape('濂芥劅锛?')}{choice.points}<br>"
+        f"{html.escape(recommendation.confidant.name)} / Rank {recommendation.event.rank_to or '?'} / "
+        f"{html.escape('缃俊搴?')}{result.score:.0%}"
+        f"</body></html>"
+    )
+
+
+def _plain_text_to_rich_text(text: str) -> str:
+    return f"<html><body>{html.escape(text).replace(chr(10), '<br>')}</body></html>"
+
+
+def _emphasize_romance_condition(text: str) -> str:
+    parts = []
+    last_index = 0
+    for match in ROMANCE_CONDITION_RE.finditer(text):
+        parts.append(html.escape(text[last_index : match.start()]))
+        parts.append(f'<span class="romance-condition">{html.escape(match.group(1))}</span>')
+        last_index = match.end()
+    parts.append(html.escape(text[last_index:]))
+    return "".join(parts)
+
+
 def format_candidates(result: MatchResult) -> str:
     lines = ["匹配不确定"]
     for index, candidate in enumerate(result.candidates, start=1):
@@ -101,7 +143,7 @@ class QtOverlay:
         self.widget.setStyleSheet(OVERLAY_STYLESHEET)
 
     def show_recommendation(self, result: MatchResult) -> None:
-        self._show_text(format_recommendation(result))
+        self._show_text(format_recommendation_rich_text(result))
 
     def show_candidates(self, result: MatchResult) -> None:
         self._show_text(format_candidates(result))
