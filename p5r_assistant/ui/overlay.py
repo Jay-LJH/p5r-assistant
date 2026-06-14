@@ -2,6 +2,53 @@ from __future__ import annotations
 
 from p5r_assistant.match.matcher import MatchResult
 
+HWND_TOPMOST = -1
+SWP_NOSIZE = 0x0001
+SWP_NOMOVE = 0x0002
+SWP_NOACTIVATE = 0x0010
+OVERLAY_MARGIN = 24
+OVERLAY_STYLESHEET = (
+    "QLabel { background: rgba(8, 10, 14, 245); color: white; "
+    "border: 1px solid rgba(255, 255, 255, 180); "
+    "padding: 14px; border-radius: 6px; font-size: 16px; }"
+)
+
+
+def raise_widget_to_topmost(widget, set_window_pos=None) -> None:
+    if set_window_pos is None:
+        try:
+            import ctypes
+
+            set_window_pos = ctypes.windll.user32.SetWindowPos
+        except Exception:
+            return
+
+    try:
+        hwnd = int(widget.winId())
+        set_window_pos(
+            hwnd,
+            HWND_TOPMOST,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+        )
+    except Exception:
+        return
+
+
+def move_widget_to_top_right(widget, margin: int = OVERLAY_MARGIN) -> None:
+    try:
+        screen = widget.screen()
+        geometry = screen.availableGeometry()
+        x = geometry.right() - widget.width() - margin
+        y = geometry.top() + margin
+    except Exception:
+        x = margin
+        y = margin
+    widget.move(x, y)
+
 
 def format_recommendation(result: MatchResult) -> str:
     recommendation = result.recommendation
@@ -51,10 +98,7 @@ class QtOverlay:
         self.widget.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.widget.setWordWrap(True)
-        self.widget.setStyleSheet(
-            "QLabel { background: rgba(20, 20, 24, 220); color: white; "
-            "padding: 14px; border-radius: 6px; font-size: 16px; }"
-        )
+        self.widget.setStyleSheet(OVERLAY_STYLESHEET)
 
     def show_recommendation(self, result: MatchResult) -> None:
         self._show_text(format_recommendation(result))
@@ -68,6 +112,7 @@ class QtOverlay:
     def _show_text(self, text: str) -> None:
         self.widget.setText(text)
         self.widget.adjustSize()
-        self.widget.move(40, 40)
+        move_widget_to_top_right(self.widget)
         self.widget.show()
+        raise_widget_to_topmost(self.widget)
         self._timer_cls.singleShot(self.timeout_ms, self.widget.hide)

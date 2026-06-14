@@ -1,0 +1,19 @@
+{
+  "keyboard_hotkey": "ctrl+alt+p",
+  "controller_combo": [
+    "LB",
+    "RB",
+    "Y"
+  ],
+  "ocr_engine": "rapidocr",
+  "confidence_direct": 0.85,
+  "confidence_uncertain": 0.65,
+  "overlay_position": "top-right",
+  "overlay_timeout_seconds": 5,
+  "crop_region": {
+    "left": 0.46,
+    "top": 0.48,
+    "width": 0.38,
+    "height": 0.35
+  }
+}
