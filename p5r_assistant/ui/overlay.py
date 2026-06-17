@@ -80,11 +80,11 @@ def format_recommendation_rich_text(result: MatchResult) -> str:
     return (
         f"<html><head>{RICH_TEXT_STYLE}</head><body>"
         f"{html.escape('P5R Assistant')}<br><br>"
-        f"{html.escape('鎺ㄨ崘锛氱 ')}{choice.index}{html.escape(' 椤?')}"
+        f"{html.escape('推荐：第 ')}{choice.index}{html.escape(' 项 ')}"
         f"{_emphasize_romance_condition(choice.text)}<br><br>"
-        f"{html.escape('濂芥劅锛?')}{choice.points}<br>"
+        f"{html.escape('好感：')}{choice.points}<br>"
         f"{html.escape(recommendation.confidant.name)} / Rank {recommendation.event.rank_to or '?'} / "
-        f"{html.escape('缃俊搴?')}{result.score:.0%}"
+        f"{html.escape('置信度 ')}{result.score:.0%}"
         f"</body></html>"
     )
 

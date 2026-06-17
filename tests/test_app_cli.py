@@ -1,7 +1,44 @@
 import json
+import sys
 from pathlib import Path
 
+import p5r_assistant.app as app
 from p5r_assistant.app import main
+
+
+class _ReconfigurableStream:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def reconfigure(self, **kwargs):
+        self.calls.append(kwargs)
+
+
+class _PlainStream:
+    pass
+
+
+def test_configure_utf8_stdio_reconfigures_supported_streams(monkeypatch):
+    stdout = _ReconfigurableStream()
+    stderr = _ReconfigurableStream()
+    monkeypatch.setattr(sys, "stdout", stdout)
+    monkeypatch.setattr(sys, "stderr", stderr)
+
+    assert hasattr(app, "configure_utf8_stdio")
+
+    app.configure_utf8_stdio()
+
+    assert stdout.calls == [{"encoding": "utf-8"}]
+    assert stderr.calls == [{"encoding": "utf-8"}]
+
+
+def test_configure_utf8_stdio_ignores_streams_without_reconfigure(monkeypatch):
+    monkeypatch.setattr(sys, "stdout", _PlainStream())
+    monkeypatch.setattr(sys, "stderr", _PlainStream())
+
+    assert hasattr(app, "configure_utf8_stdio")
+
+    app.configure_utf8_stdio()
 
 
 def test_cli_import_guide_writes_json(tmp_path: Path, capsys):

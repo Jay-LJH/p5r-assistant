@@ -12,6 +12,8 @@ try:
 except ImportError:  # pragma: no cover
     fuzz = None
 
+ROMANCE_CONDITION_MARKERS = ("恋人条件", "戀人條件")
+
 
 @dataclass(slots=True)
 class Recommendation:
@@ -72,7 +74,7 @@ class Matcher:
             for event in confidant.events:
                 for question in event.questions:
                     score = self._score_question(normalized_visible, question)
-                    best_choice = max(question.choices, key=lambda choice: choice.points)
+                    best_choice = max(question.choices, key=_choice_priority)
                     candidates.append(Recommendation(confidant, event, question, best_choice, score))
 
         candidates.sort(key=lambda candidate: candidate.score, reverse=True)
@@ -128,3 +130,7 @@ def _similarity(left: str, right: str) -> float:
     if fuzz is not None:
         return fuzz.ratio(left, right) / 100
     return SequenceMatcher(None, left, right).ratio()
+
+
+def _choice_priority(choice: Choice) -> tuple[bool, int]:
+    return (any(marker in choice.text for marker in ROMANCE_CONDITION_MARKERS), choice.points)

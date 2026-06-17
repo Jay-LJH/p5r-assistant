@@ -22,6 +22,24 @@ def test_exact_option_group_recommends_highest_points():
     assert result.recommendation.choice.points == 3
 
 
+def test_romance_condition_choice_is_recommended_before_higher_points():
+    romance_text = "我喜欢你（恋人条件1）"
+    choices = [
+        Choice("ann_rank_9_q1_c1", 1, "你真努力", normalize_text("你真努力"), 3),
+        Choice("ann_rank_9_q1_c2", 2, romance_text, normalize_text(romance_text), 0),
+        Choice("ann_rank_9_q1_c3", 3, "加油", normalize_text("加油"), 2),
+    ]
+    question = Question("ann_rank_9_q1", choices)
+    event = Event("ann_rank_9", "rank_up", [question], rank_from=8, rank_to=9, title="Rank 9")
+    guide = Guide("1", "now", "tests", [Confidant("ann", "高卷杏", [event])])
+
+    result = Matcher(guide, AliasStore.empty()).match(["你真努力", romance_text, "加油"])
+
+    assert result.confident is True
+    assert result.recommendation.choice.index == 2
+    assert result.recommendation.choice.points == 0
+
+
 def test_fuzzy_ocr_typo_still_matches():
     result = Matcher(_guide(), AliasStore.empty()).match(["什么思？", "随便他们怎幺说吧"])
 
